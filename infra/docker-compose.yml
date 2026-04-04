@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: chess_app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d chess_app"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  engine-worker:
+    build:
+      context: ../workers/engine
+      dockerfile: Dockerfile
+    ports:
+      - "8101:8101"
+
+  reflection-worker:
+    build:
+      context: ../workers/reflection
+      dockerfile: Dockerfile
+    ports:
+      - "8102:8102"
+
+  api:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/chess_app
+      ENGINE_WORKER_URL: http://engine-worker:8101
+      REFLECTION_WORKER_URL: http://reflection-worker:8102
+      CHALLENGE_MODE_ENABLED: "true"
+      REFLECTION_TIMEOUT_SECONDS: "3"
+      CORS_ALLOW_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      engine-worker:
+        condition: service_started
+      reflection-worker:
+        condition: service_started
+
+volumes:
+  postgres_data:

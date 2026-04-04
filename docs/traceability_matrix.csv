@@ -1,0 +1,24 @@
+requirement_id,requirement_summary,test_case_id,test_level,automation_id,status
+FR-1,Candidate move CRUD and selection before commit,TC-FR-1-01,E2E,AT-FR-1-E2E-01,Implemented
+FR-2,Validate legality and reject illegal moves,TC-FR-2-01,Integration,AT-FR-2-INT-01,Implemented
+FR-3,Persist candidate notes and committed move,TC-FR-3-01,Integration,AT-FR-3-INT-01,Implemented
+FR-4,Keep draft exploration separate from committed state,TC-FR-4-01,Integration,AT-FR-4-INT-01,Implemented
+FR-5,Autosave candidate notes during active turn,TC-FR-5-01,Integration,AT-FR-5-INT-01,Implemented
+FR-6,Generate grounded post-commit reflection,TC-FR-6-01,Integration,AT-FR-6-INT-01,Implemented
+FR-7,Classify reflection into explanation tags,TC-FR-7-01,Unit,AT-FR-7-UNIT-01,Implemented
+FR-8,Store reflection with committed move,TC-FR-8-01,Integration,AT-FR-8-INT-01,Implemented
+FR-9,Optional challenge mode requires reasoning,TC-FR-9-01,Integration,AT-FR-9-INT-01,Implemented
+FR-10,Ask follow-up when reasoning is too vague,TC-FR-10-01,Integration,AT-FR-10-INT-01,Implemented
+FR-11,Replay sessions with notes and reflections,TC-FR-11-01,E2E,AT-FR-11-E2E-01,Implemented
+FR-12,Compute aggregate learning metrics,TC-FR-12-01,Integration,AT-FR-12-INT-01,Implemented
+NFR-1,Local move validation responsiveness,TC-NFR-1-01,Performance,AT-NFR-1-PERF-01,Implemented
+NFR-2,Durable session log across refresh/reconnect,TC-NFR-2-01,Integration,AT-NFR-2-INT-01,Implemented
+NFR-3,Per-session engine difficulty configurability,TC-NFR-3-01,Integration,AT-NFR-3-INT-01,Implemented
+NFR-4,Non-blocking candidate note updates,TC-NFR-4-01,Performance,AT-NFR-4-PERF-01,Implemented
+NFR-5,Retryable draft-save failure handling,TC-NFR-5-01,Integration,AT-NFR-5-INT-01,Implemented
+NFR-6,Reflection latency <= 3 seconds,TC-NFR-6-01,Performance,AT-NFR-6-PERF-01,Implemented
+NFR-7,Bounded and safe AI output rendering,TC-NFR-7-01,Security,AT-NFR-7-SEC-01,Implemented
+NFR-8,Challenge mode kill switch via feature flag,TC-NFR-8-01,Security,AT-NFR-8-SEC-01,Implemented
+NFR-9,Fail-open fallback if AI service unavailable,TC-NFR-9-01,Integration,AT-NFR-9-INT-01,Implemented
+NFR-10,Paginated incremental history loading,TC-NFR-10-01,Performance,AT-NFR-10-PERF-01,Implemented
+NFR-11,Historical metric stability across model versions,TC-NFR-11-01,Monitoring,AT-NFR-11-MON-01,Implemented

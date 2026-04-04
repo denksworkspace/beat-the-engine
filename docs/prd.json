@@ -1,0 +1,165 @@
+{
+  "product_name": "AI-Assisted Chess Reflection Training App",
+  "product_overview": "Web chess training application for deliberate move selection with candidate notes, engine feedback, AI reflection, challenge-mode reasoning gate, and replayable learning analytics.",
+  "features": [
+    {
+      "feature_id": "F001",
+      "general_info": {
+        "name": "Disciplined Chess Training Session",
+        "overview": "Deliver structured training sessions where users draft candidates, commit one move, and learn from engine-grounded AI reflection over time."
+      },
+      "goal_and_context": {
+        "business_goal": "Increase user learning outcomes and repeat training sessions by making move decisions explicit and reviewable.",
+        "user_problem": "Players often commit moves impulsively and only see post-hoc engine scores without clear reasoning feedback."
+      },
+      "actors_and_roles": {
+        "primary_user": "Chess player / improver",
+        "secondary_user": "Coach (history reviewer)",
+        "system_service": "Session API + Engine worker + Reflection worker"
+      },
+      "business_rules": [
+        {
+          "rule_id": "BR001",
+          "description": "Only legal moves can be saved or committed for the active position."
+        },
+        {
+          "rule_id": "BR002",
+          "description": "Candidate drafts do not mutate the official board state before commit."
+        },
+        {
+          "rule_id": "BR003",
+          "description": "Challenge mode requires sufficient reasoning or a follow-up answer before commit when feature flag is enabled."
+        },
+        {
+          "rule_id": "BR004",
+          "description": "If reflection service is unavailable, commit still succeeds with fallback reflection status."
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "scenario_id": "SC001",
+          "user_story": "As a player I want to start or resume a training session quickly.",
+          "bdd": {
+            "given": "A signed-in player opens the training application.",
+            "and_preconditions": [
+              "Session API is reachable",
+              "Configured engine level is within allowed bounds"
+            ],
+            "when": "The player starts a session with mode and engine level or reconnects to an existing one.",
+            "then": "The system returns active session state with current turn and board position.",
+            "and_postconditions": [
+              "A persistent session exists",
+              "Current turn can be resumed after reconnect"
+            ]
+          }
+        },
+        {
+          "scenario_id": "SC002",
+          "user_story": "As a player I want to manage candidate moves and notes before commit.",
+          "bdd": {
+            "given": "An active turn exists with a legal board position.",
+            "and_preconditions": [
+              "Client has the current turn version",
+              "Candidate payload references legal moves"
+            ],
+            "when": "The player creates or updates draft candidates and notes.",
+            "then": "Draft candidates are stored and turn version is incremented without changing committed board state.",
+            "and_postconditions": [
+              "Candidates are recoverable after reconnect",
+              "Stale turn versions are rejected"
+            ]
+          }
+        },
+        {
+          "scenario_id": "SC003",
+          "user_story": "As a player I want post-commit reflection grounded in engine analysis.",
+          "bdd": {
+            "given": "A player has selected a legal move for the active turn.",
+            "and_preconditions": [
+              "Engine analysis service is reachable or fallback is available",
+              "Commit request contains active turn version"
+            ],
+            "when": "The player commits the selected move.",
+            "then": "The move is committed, engine response is applied, and reflection is stored with tags.",
+            "and_postconditions": [
+              "Next turn is created",
+              "Metrics snapshot is persisted"
+            ]
+          }
+        },
+        {
+          "scenario_id": "SC004",
+          "user_story": "As a player in challenge mode I want reasoning quality checks before commit.",
+          "bdd": {
+            "given": "Challenge mode session is active.",
+            "and_preconditions": [
+              "Challenge feature flag can be toggled",
+              "Reasoning quality threshold is configured"
+            ],
+            "when": "The player commits with weak reasoning and no follow-up answer.",
+            "then": "Commit is blocked with challenge prompt until sufficient answer is provided or flag is disabled.",
+            "and_postconditions": [
+              "User can proceed after valid follow-up",
+              "Fail-open behavior applies if reflection service is unavailable"
+            ]
+          }
+        },
+        {
+          "scenario_id": "SC005",
+          "user_story": "As a player or coach I want replayable history and stable learning metrics.",
+          "bdd": {
+            "given": "At least one committed turn exists in session history.",
+            "and_preconditions": [
+              "History endpoint supports pagination",
+              "Metrics aggregation can query by date range"
+            ],
+            "when": "The user requests history or metrics.",
+            "then": "System returns paginated replay data and aggregate metrics including reflection distributions.",
+            "and_postconditions": [
+              "Historical records stay queryable across model-version changes",
+              "Trend metrics are reproducible for same filters"
+            ]
+          }
+        }
+      ],
+      "non_functional_requirements": [
+        {"nfr_id": "NFR001", "type": "performance", "description": "Local move validation responsiveness target under 200 ms."},
+        {"nfr_id": "NFR002", "type": "reliability", "description": "Durable session log survives refresh and reconnect."},
+        {"nfr_id": "NFR003", "type": "configurability", "description": "Engine difficulty configurable per session."},
+        {"nfr_id": "NFR004", "type": "performance", "description": "Candidate note updates are non-blocking for board interaction."},
+        {"nfr_id": "NFR005", "type": "resilience", "description": "Draft-save failures are retryable without losing turn context."},
+        {"nfr_id": "NFR006", "type": "performance", "description": "Reflection latency target at or below 3 seconds in standard mode."},
+        {"nfr_id": "NFR007", "type": "security", "description": "Reflection output is bounded and safe to render."},
+        {"nfr_id": "NFR008", "type": "security", "description": "Challenge mode controlled by feature flag kill switch."},
+        {"nfr_id": "NFR009", "type": "resilience", "description": "Commit flow fails open with clear fallback when reflection service is unavailable."},
+        {"nfr_id": "NFR010", "type": "performance", "description": "History supports paginated incremental loading for long sessions."},
+        {"nfr_id": "NFR011", "type": "monitoring", "description": "Metrics remain stable and queryable across reflection model version changes."}
+      ],
+      "test_cases": [
+        {"test_id": "T001", "scenario_id": "SC001", "setup": "No active session", "action": "Create session", "assertion": "Session and first turn are returned", "examples": [{"input": {"mode": "standard", "engine_level": 5}, "expected": {"status": 200}}]},
+        {"test_id": "T002", "scenario_id": "SC001", "setup": "Default start", "action": "Create session without FEN override", "assertion": "Initial FEN equals classical start", "examples": [{"input": {}, "expected": {"fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"}}]},
+        {"test_id": "T003", "scenario_id": "SC002", "setup": "Active turn", "action": "Save legal candidates", "assertion": "State remains draft and version increments", "examples": [{"input": {"version": 1}, "expected": {"state": "draft_exploration", "version": 2}}]},
+        {"test_id": "T004", "scenario_id": "SC002", "setup": "Active turn", "action": "Commit illegal move", "assertion": "Request rejected with ILLEGAL_MOVE", "examples": [{"input": {"selected_move": "a1a1"}, "expected": {"status": 400, "code": "ILLEGAL_MOVE"}}]},
+        {"test_id": "T005", "scenario_id": "SC002", "setup": "Turn updated by another save", "action": "Commit with stale version", "assertion": "Request rejected with STALE_TURN", "examples": [{"input": {"version": 1}, "expected": {"status": 409, "code": "STALE_TURN"}}]},
+        {"test_id": "T006", "scenario_id": "SC003", "setup": "Committed legal move", "action": "Get commit response", "assertion": "Next turn created and FEN updated", "examples": [{"input": {"selected_move": "legal"}, "expected": {"has_next_turn": true}}]},
+        {"test_id": "T007", "scenario_id": "SC003", "setup": "Commit completed", "action": "Inspect reflection tags", "assertion": "Reflection tags are list-like and persisted", "examples": [{"input": {}, "expected": {"tags_type": "list"}}]},
+        {"test_id": "T008", "scenario_id": "SC003", "setup": "Commit completed", "action": "Read history", "assertion": "Reflection text appears in timeline", "examples": [{"input": {"limit": 20, "offset": 0}, "expected": {"items_gte": 1}}]},
+        {"test_id": "T009", "scenario_id": "SC004", "setup": "Challenge mode enabled", "action": "Commit with weak reasoning and no answer", "assertion": "Request blocked with CHALLENGE_REQUIRED", "examples": [{"input": {"reasoning_text": "short"}, "expected": {"status": 422, "code": "CHALLENGE_REQUIRED"}}]},
+        {"test_id": "T010", "scenario_id": "SC004", "setup": "Challenge mode enabled", "action": "Commit with challenge answer", "assertion": "Commit succeeds", "examples": [{"input": {"challenge_answer": "Calculated line"}, "expected": {"status": 200}}]},
+        {"test_id": "T011", "scenario_id": "SC004", "setup": "Challenge flag disabled", "action": "Commit with weak reasoning", "assertion": "Commit succeeds", "examples": [{"input": {"challenge_mode_enabled": false}, "expected": {"status": 200}}]},
+        {"test_id": "T012", "scenario_id": "SC005", "setup": "Committed turns exist", "action": "Request history page", "assertion": "Paginated response returned", "examples": [{"input": {"limit": 10, "offset": 0}, "expected": {"status": 200}}]},
+        {"test_id": "T013", "scenario_id": "SC005", "setup": "Committed turns exist", "action": "Request metrics", "assertion": "User metrics include aggregate fields", "examples": [{"input": {}, "expected": {"status": 200, "has_committed_turns": true}}]},
+        {"test_id": "T014", "scenario_id": "SC005", "setup": "Two reflection model versions stored", "action": "Request metrics", "assertion": "Model-version distribution present", "examples": [{"input": {}, "expected": {"has_model_distribution": true}}]},
+        {"test_id": "T015", "scenario_id": "SC002", "setup": "Legal moves available", "action": "Call legal move utility", "assertion": "Known legal opening move exists", "examples": [{"input": {"fen": "start"}, "expected": {"contains": "e2e4"}}]},
+        {"test_id": "T016", "scenario_id": "SC003", "setup": "Reflection worker unavailable", "action": "Commit move", "assertion": "Commit succeeds with unavailable/fallback status", "examples": [{"input": {}, "expected": {"status": 200, "reflection_status": "unavailable_or_available"}}]},
+        {"test_id": "T017", "scenario_id": "SC003", "setup": "Reflection payload contains html", "action": "Sanitize reflection", "assertion": "Rendered text strips tags and is bounded", "examples": [{"input": {"text": "<b>x</b>"}, "expected": {"contains_html": false}}]},
+        {"test_id": "T018", "scenario_id": "SC003", "setup": "Reflection timeout >3 configured", "action": "Invoke reflection client", "assertion": "Effective timeout is capped to 3 seconds", "examples": [{"input": {"timeout": 9.5}, "expected": {"effective_timeout": 3.0}}]},
+        {"test_id": "T019", "scenario_id": "SC005", "setup": "Position provided", "action": "Evaluate position", "assertion": "Returns eval and source or INVALID_FEN error", "examples": [{"input": {"fen": "invalid"}, "expected": {"code": "INVALID_FEN"}}]},
+        {"test_id": "T020", "scenario_id": "SC005", "setup": "Committed move exists", "action": "Undo last commit", "assertion": "Turn restored and next undo fails with NOTHING_TO_UNDO", "examples": [{"input": {}, "expected": {"restored": true}}]},
+        {"test_id": "T021", "scenario_id": "SC001", "setup": "Web app local storage has session id", "action": "Restore session on load", "assertion": "Frontend resumes active turn and candidates", "examples": [{"input": {}, "expected": {"restored": true}}]},
+        {"test_id": "T022", "scenario_id": "SC002", "setup": "Frontend has changed draft", "action": "Autosave candidate draft", "assertion": "Autosave is non-blocking and retry path exists", "examples": [{"input": {}, "expected": {"retry_supported": true}}]},
+        {"test_id": "T023", "scenario_id": "SC001", "setup": "Session create form open", "action": "Select engine level and mode", "assertion": "Session starts with chosen settings", "examples": [{"input": {"mode": "challenge", "engine_level": 7}, "expected": {"mode": "challenge", "engine_level": 7}}]}
+      ]
+    }
+  ]
+}
